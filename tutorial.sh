@@ -2,6 +2,13 @@
 
 set -e
 
+this_script=$(basename $(readlink -nf $0))
+CC=$(which gcc)
+CCARGS="-march=native -O3"
+runprocsrc="many_fib.c"
+runprocname="./a.out"
+runprocargs=""
+
 testcmd="python -c"
 testcmdargs="import tensorflow
 print(tensorflow.__version__)"
@@ -11,7 +18,7 @@ goto() {
   exit
 }
 
-showmenu() {
+mainmenu() {
   read -p "
 0) Display general perf info
 1) Display perf help
@@ -21,7 +28,8 @@ showmenu() {
 5) Run perf stat
 6) Run perf record
 7) Run perf top
-8) Other tools
+8) Attach to ${runprocname}, (requires CC variable set in ${this_script})
+9) Other tools
 
 else) quit
 
@@ -35,8 +43,34 @@ Enter your selection: " response
     5) start="perfstat" ;;
     6) start="perfrecord" ;;
     7) start="perftop" ;;
-    8) start="othertools" ;;
+    8) start="perfattach" ;;
+    9) start="othertools" ;;
     *) start="end" ;;
+  esac
+}
+
+statmenu() {
+  read -p "
+Run \"perf stat\"
+0) Without options
+1) With repeated measurements
+2) With some named options
+3) Same as option 2, but in processor-wide mode
+
+Enter your selection: " response
+  case ${response} in
+    1) opts="-r 5"
+      ;;
+    2|3) opts="-B -e "
+        opts+="l1d.replacement"
+        opts+=",cycle_activity.stalls_total"
+        opts+=",cycle_activity.cycles_l1d_miss"
+        opts+=",ild_stall.lcp"
+        if [ ${response} -eq 3 ] ; then
+          opts+=" -a"
+        fi
+      ;;
+    *) opts=""
   esac
 }
 
@@ -49,7 +83,7 @@ docontinue() {
 
 start=""
 
-showmenu
+mainmenu
 goto ${start}
 
 start:
@@ -63,7 +97,7 @@ recent versions of the Linux kernel.
 
 docontinue "Continue with the \"perf help\""
 if [ -z ${start} ] ; then
-  showmenu
+  mainmenu
   goto ${start}
 fi
 
@@ -80,7 +114,7 @@ echo "We can get a list of events from the perf command
 
 docontinue "Continue with the \"perf list\""
 if [ -z ${start} ] ; then
-  showmenu
+  mainmenu
   goto ${start}
 fi
 
@@ -96,7 +130,7 @@ echo ""
 
 docontinue "Continue with the \"perf test\""
 if [ -z ${start} ] ; then
-  showmenu
+  mainmenu
   goto ${start}
 fi
 
@@ -113,7 +147,7 @@ Either we don't have permissions or the item is unavailable
 
 docontinue "Continue to check the paranoia setting"
 if [ -z ${start} ] ; then
-  showmenu
+  mainmenu
   goto ${start}
 fi
 
@@ -127,35 +161,13 @@ Unless you administer for multiple users there isn't much point, just use sudo
 
 docontinue "Continue with a \"perf stat\""
 if [ -z ${start} ] ; then
-  showmenu
+  mainmenu
   goto ${start}
 fi
 
 perfstat:
 
-read -p "
-Run \"perf stat\"
-0) Without options
-1) With repeated measurements
-2) With some named options
-3) Same as option 2, but in processor-wide mode
-
-Enter your selection: " response
-
-case ${response} in
-  1) opts="-r 5"
-    ;;
-  2|3) opts="-B -e "
-      opts+="l1d.replacement"
-      opts+=",cycle_activity.stalls_total"
-      opts+=",cycle_activity.cycles_l1d_miss"
-      opts+=",ild_stall.lcp"
-      if [ ${response} -eq 3 ] ; then
-        opts+=" -a"
-      fi
-    ;;
-  *) opts=""
-esac
+statmenu
 
 basecmd="perf stat ${opts}"
 
@@ -201,7 +213,7 @@ fi
 
 docontinue "Continue with a \"perf record\""
 if [ -z ${start} ] ; then
-  showmenu
+  mainmenu
   goto ${start}
 fi
 
@@ -221,6 +233,7 @@ read -p "
 \"perf.data\" created, view the contents? (Y/n) " response
 if ! [[ "${response}" =~ [nN] ]] ; then
   set +e
+  echo "$ perf script"
   perf script
   set -e
 fi
@@ -243,7 +256,7 @@ perf report -D -i perf.data | fgrep RECORD_SAMPLE | wc -l
 docontinue "
 Continue with a \"perf top\""
 if [ -z ${start} ] ; then
-  showmenu
+  mainmenu
   goto ${start}
 fi
 
@@ -257,9 +270,42 @@ else
 fi
 
 docontinue "
-Continue and show other tools in the perf suite"
+Continue and attach other program"
 if [ -z ${start} ] ; then
-  showmenu
+  mainmenu
+  goto ${start}
+fi
+
+perfattach:
+
+if ! [ -f ${runprocname} ] ; then
+  if ! [ -f ${runprocsrc} ] ; then
+    echo "${runprocname} does not exist"
+    echo "${runprocsrc} does not exist"
+    echo "Source required to compile program, check ${this_script}"
+    mainmenu
+    goto ${start}
+  fi
+  if [ -z ${CC} ] ; then
+    echo "${runprocname} does not exist"
+    echo "Compiler must be set, check ${this_script}"
+    mainmenu
+    goto ${start}
+  fi
+  ${CC} ${CCARGS} -o ${runprocname} ${runprocsrc}
+fi
+
+${runprocname} ${runprocargs} &
+launched_pid=$!
+echo "Attaching to process id ${launched_pid}
+$ perf stat -e cycles,uops_issued.any -p ${launched_pid}
+"
+perf stat -e cycles,uops_issued.any -p ${launched_pid}
+
+docontinue "
+Continue and show excert of perf manual"
+if [ -z ${start} ] ; then
+  mainmenu
   goto ${start}
 fi
 
@@ -296,7 +342,7 @@ perf 5.19-1                       2022-04-14                           PERF(1)
 read -p "
 This was the last item, return to the menu? (y/N) " response
 if [[ "${response}" =~ [yY] ]] ; then
-  showmenu
+  mainmenu
   goto ${start}
 fi
 
