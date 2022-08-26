@@ -9,7 +9,7 @@ ___
 
 ### Set a custom program to use in `tutorial.sh`
 * Change `testcmd` variable
-  * This variable is currently built from `testcmdbase` and `testcmdargs`
+  * The command is currently built from both `testcmd` and `testcmdargs`
   * The `testcmdargs` are quoted
 ___
 
