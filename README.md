@@ -13,6 +13,6 @@ https://perf.wiki.kernel.org/index.php/Tutorial
   
 https://www.kernel.org/doc/html/latest/admin-guide/perf-security.html  
   
-github.com/torvalds/linux  - tools/perf/Documentation/security.txt  
+https://github.com/torvalds/linux  - tools/perf/Documentation/security.txt  
   
 ___
