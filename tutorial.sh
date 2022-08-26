@@ -119,7 +119,7 @@ paranoia:
 ./paranoia.sh
 
 echo "We could add a perf_users group and workaround this issue if we want,
-though unless you have multiple users there isn't much point, just use sudo
+Unless you administer for multiple users there isn't much point, just use sudo
 "
 
 docontinue "Continue with a \"perf stat\""
@@ -136,7 +136,6 @@ Run \"perf stat\"
 1) With repeated measurements
 2) With some named options
 3) Same as option 2, but in processor-wide mode
-4) 
 
 Enter your selection: " response
 
@@ -169,11 +168,6 @@ l1d.replacement [Counts the number of cache lines replaced in L1 data cache]
 cycle_activity.stalls_total [Total execution stalls]
 cycle_activity.cycles_l1d_miss [Cycles while L1 cache miss demand load is outstanding]
 ild_stall.lcp [Stalls caused by changing prefix length of the instruction]"
-    ;;
-  4) echo "
-
-https://www.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-software-developer-vol-3b-part-2-manual.html
-Table 18-2. Association of Fixed-Function Performance Counters with Architectural Performance Events"
     ;;
   *) echo "With no events specified, perf stat collects the common events listed above.
 Some are software events, such as context-switches, others are generic hardware events such as cycles.
@@ -256,25 +250,29 @@ othertools:
 echo "
 Other perf tools:"
 echo "
-PERF(1)                                                         perf Manual                                                        PERF(1)"
+PERF(1)                           perf Manual                          PERF(1)"
 echo "
 NAME
        perf - Performance analysis tools for Linux"
 echo "
 DESCRIPTION
-       Performance counters for Linux are a new kernel-based subsystem that provide a framework for all things performance analysis. It
-       covers hardware level (CPU/PMU, Performance Monitoring Unit) features and software features (software counters, tracepoints) as
-       well."
+       Performance counters for Linux are a new kernel-based subsystem that
+       provide a framework for all things performance analysis. It covers
+       hardware level (CPU/PMU, Performance Monitoring Unit) features and
+       software features (software counters, tracepoints) as well."
 echo "
 SEE ALSO
        perf-stat(1), perf-top(1), perf-record(1), perf-report(1), perf-list(1)"
 echo "
-       perf-annotate(1),perf-archive(1),perf-arm-spe(1), perf-bench(1), perf-buildid-cache(1), perf-buildid-list(1), perf-c2c(1), perf-
-       config(1), perf-data(1), perf-diff(1), perf-evlist(1), perf-ftrace(1), perf-help(1), perf-inject(1), perf-intel-pt(1), perf-
-       iostat(1), perf-kallsyms(1), perf-kmem(1), perf-kvm(1), perf-lock(1), perf-mem(1), perf-probe(1), perf-sched(1), perf-script(1),
-       perf-test(1), perf-trace(1), perf-version(1)"
+       perf-annotate(1),perf-archive(1),perf-arm-spe(1), perf-bench(1), perf-
+       buildid-cache(1), perf-buildid-list(1), perf-c2c(1), perf-config(1),
+       perf-data(1), perf-diff(1), perf-evlist(1), perf-ftrace(1), perf-
+       help(1), perf-inject(1), perf-intel-pt(1), perf-iostat(1), perf-
+       kallsyms(1), perf-kmem(1), perf-kvm(1), perf-lock(1), perf-mem(1),
+       perf-probe(1), perf-sched(1), perf-script(1), perf-test(1), perf-
+       trace(1), perf-version(1)"
 echo "
-perf 5.19-1                                                     2022-04-14                                                         PERF(1)
+perf 5.19-1                       2022-04-14                           PERF(1)
 "
 
 read -p "
