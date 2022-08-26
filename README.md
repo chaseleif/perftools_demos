@@ -4,7 +4,13 @@
 
 * `paranoia.sh` - Prints the value and meaning from proc/sys/kernel/ option
 * `tutorial.sh` - Menu-driven script illustrating different `perf` commands
+  
+___
 
+### Set a custom program to use in `tutorial.sh`
+* Change `testcmd` variable
+  * This variable is currently built from `testcmdbase` and `testcmdargs`
+  * The `testcmdargs` are quoted
 ___
 
 Resources:  
