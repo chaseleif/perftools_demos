@@ -13,6 +13,20 @@ testcmd="python -c"
 testcmdargs="import tensorflow
 print(tensorflow.__version__)"
 
+#testcmd="sleep 3"
+#testcmdargs=""
+
+if ! [ -f ${runprocname} ] ; then
+  set +e
+  ${CC} ${CCARGS} -o ${runprocname} ${runprocsrc}
+  set -e
+fi
+attachprompt=""
+if [ -f ${runprocname} ] ; then
+  attachprompt="8) Attach to ${runprocname}
+"
+fi
+
 goto() {
   eval "$(sed -n "/${1}:/{:a;n;p;ba}" $0 | grep -v ':$')"
   exit
@@ -28,8 +42,7 @@ mainmenu() {
 5) Run perf stat
 6) Run perf record
 7) Run perf top
-8) Attach to ${runprocname}, (requires CC variable set in ${this_script})
-9) Other tools
+${attachprompt}9) Other tools
 
 else) quit
 
@@ -43,7 +56,9 @@ Enter your selection: " response
     5) start="perfstat" ;;
     6) start="perfrecord" ;;
     7) start="perftop" ;;
-    8) start="perfattach" ;;
+    8) if [ -f ${runprocname} ] ; then
+        start="perfattach"
+       fi ;;
     9) start="othertools" ;;
     *) start="end" ;;
   esac
@@ -81,9 +96,12 @@ docontinue() {
   return 0
 }
 
-start=""
-
 mainmenu
+
+if [ ${start} == "end" ] ; then
+  start="start"
+fi
+
 goto ${start}
 
 start:
@@ -171,9 +189,13 @@ statmenu
 
 basecmd="perf stat ${opts}"
 
-echo "$ ${basecmd} ${testcmd} \"${testcmdargs}\""
-
-${basecmd} ${testcmd} "${testcmdargs}"
+if [ "${testcmdargs}" == "" ] ; then
+  echo "$ ${basecmd} ${testcmd}"
+  ${basecmd} ${testcmd}
+else
+  echo "$ ${basecmd} ${testcmd} \"${testcmdargs}\""
+  ${basecmd} ${testcmd} "${testcmdargs}"
+fi
 
 case ${response} in
   1) echo "
@@ -219,15 +241,19 @@ fi
 
 perfrecord:
 
+rm -f perf.data
+
 echo "
 By default perf record operates in per-thread mode with inherit mode enabled.
 The simplest mode looks as follows:
-
-$ perf record ${testcmd} \"${testcmdargs}\""
-
-rm -f perf.data
-perf record ${testcmd} "${testcmdargs}"
-
+"
+if [ "${testcmdargs}" == "" ] ; then
+  echo "$ perf record ${testcmd}"
+  perf record ${testcmd}
+else
+  echo "$ perf record ${testcmd} \"${testcmdargs}\""
+  perf record ${testcmd} "${testcmdargs}"
+fi
 
 read -p "
 \"perf.data\" created, view the contents? (Y/n) " response
@@ -269,31 +295,22 @@ else
   perf top
 fi
 
-docontinue "
+if ! [ -f ${runprocname} ] ; then
+  docontinue "
+Continue and show excerpt of perf manual"
+else
+  docontinue "
 Continue and attach other program"
+fi
+
 if [ -z ${start} ] ; then
   mainmenu
   goto ${start}
+elif ! [ -f ${runprocname} ] ; then
+  goto othertools
 fi
 
 perfattach:
-
-if ! [ -f ${runprocname} ] ; then
-  if ! [ -f ${runprocsrc} ] ; then
-    echo "${runprocname} does not exist"
-    echo "${runprocsrc} does not exist"
-    echo "Source required to compile program, check ${this_script}"
-    mainmenu
-    goto ${start}
-  fi
-  if [ -z ${CC} ] ; then
-    echo "${runprocname} does not exist"
-    echo "Compiler must be set, check ${this_script}"
-    mainmenu
-    goto ${start}
-  fi
-  ${CC} ${CCARGS} -o ${runprocname} ${runprocsrc}
-fi
 
 ${runprocname} ${runprocargs} &
 launched_pid=$!
